@@ -6,6 +6,8 @@ df = pd.read_csv('hotels.csv', dtype={'id':str}) # load all the data as string b
 df_cards = pd.read_csv('cards.csv', dtype=str).to_dict(orient='records') # it makes sense to import this data as a dictionary
     # because a single dictionary represents one row of the card data
 
+df_security = pd.read_csv('card_security.csv', dtype=str)
+
 class Hotel:
     def __init__(self, hotel_id):
         self.hotel_id = hotel_id
@@ -50,18 +52,31 @@ class CreditCard:
             print('Your Card was Validated!')
             return True
         
+class CardSecurity(CreditCard):   #inherit the CreditCard class
+    """This class doesn't need an __init__ method because it already inherits it from """
+    
+    def authenticate(self, given_password):
+        password = df_security.loc[df_security['number'] == self.number, 'password'].squeeze()
+        if password == given_password:
+            return True
+        
 
 print(df)
-id = input('Enter the hotel ID')
+id = input('Enter the hotel ID: ')
 hotel = Hotel(hotel_id=id)
 
 if hotel.available():
-    credit_card = CreditCard(number ='1234')
+    credit_card = CardSecurity(number ='1234567890123456')
     if credit_card.validated(expiration='12/26', holder='JOHN SMITH', cvc='123'):
-        hotel.book_room()
-        name = input('Enter your name')
-        reservation_ticket = ReservationTicket(customer_name=name, hotel_object=hotel) #the reservation ticket class should point to the specified hotel
-        print(reservation_ticket.generate_ticket())
+        given_password = input('Enter your password: ')
+        if credit_card.authenticate(given_password=given_password):
+            print('Password was authenticated!')
+            hotel.book_room()
+            name = input('Enter your name: ')
+            reservation_ticket = ReservationTicket(customer_name=name, hotel_object=hotel) #the reservation ticket class should point to the specified hotel
+            print(reservation_ticket.generate_ticket())
+        else:
+            print('Card authentication failed')
     else:
         print("Credit Card was not validated")
 else:
